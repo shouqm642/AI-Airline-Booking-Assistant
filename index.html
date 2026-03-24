@@ -16,7 +16,6 @@
       color: white;
     }
 
-    /* Splash Screen */
     #splash {
       position: fixed;
       inset: 0;
@@ -29,20 +28,24 @@
     }
 
     #logo {
-      font-size: 42px;
-      font-weight: bold;
+      width: 140px;
+      height: 140px;
       opacity: 0;
       transform: scale(0.8);
       animation: fadeZoom 2s ease forwards;
-      color: #ff2d55;
-      text-align: center;
+      border-radius: 28px;
+      object-fit: cover;
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.35);
     }
 
-    #logo span {
-      color: white;
-      display: block;
-      font-size: 20px;
-      margin-top: 10px;
+    #logoText {
+      margin-top: 18px;
+      font-size: 24px;
+      color: #ffffff;
+      opacity: 0;
+      animation: fadeText 1.4s ease forwards;
+      animation-delay: 0.8s;
+      text-align: center;
     }
 
     @keyframes fadeZoom {
@@ -56,7 +59,11 @@
       }
     }
 
-    /* Main App */
+    @keyframes fadeText {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     .app {
       display: none;
       max-width: 900px;
@@ -134,6 +141,7 @@
       overflow-y: auto;
       margin-bottom: 10px;
       padding-right: 4px;
+      white-space: pre-line;
     }
 
     .message {
@@ -163,22 +171,23 @@
 
     @media (max-width: 600px) {
       #logo {
-        font-size: 32px;
+        width: 110px;
+        height: 110px;
+      }
+
+      #logoText {
+        font-size: 20px;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Splash Screen -->
   <div id="splash">
-    <div id="logo">
-      ✈️ AI Airline
-      <span>Booking Assistant</span>
-    </div>
+    <img id="logo" src="logo.png" alt="App Logo">
+    <div id="logoText">AI Airline Booking Assistant</div>
   </div>
 
-  <!-- Main App -->
   <div class="app" id="app">
     <div class="header">
       <h1>AI Airline Booking Assistant</h1>
@@ -216,9 +225,9 @@
       <h2>AI Chatbot</h2>
       <div class="chat-box">
         <div class="chat-messages" id="chatMessages">
-          <div class="message bot">Hello! I can help you with flights, baggage rules, and travel questions.</div>
+          <div class="message bot">Hello! I can help you search flights, explain baggage rules, and answer travel questions.</div>
         </div>
-        <input type="text" id="userInput" placeholder="Ask about flights, baggage, laptop, overweight..." />
+        <input type="text" id="userInput" placeholder="Ask about flights, baggage, passport, visa..." />
         <button onclick="sendMessage()">Send</button>
       </div>
     </div>
@@ -229,21 +238,20 @@
   </div>
 
   <script>
-    // Splash screen
     window.addEventListener("load", function () {
       setTimeout(() => {
         document.getElementById("splash").style.display = "none";
         document.getElementById("app").style.display = "block";
-      }, 2600);
+      }, 2800);
     });
 
-    // Simulated flight data
     const flights = [
       { from: "Dubai", to: "London", date: "2026-05-01", airline: "SkyJet", price: "$500" },
       { from: "Dubai", to: "Paris", date: "2026-05-02", airline: "FlyAir", price: "$450" },
       { from: "Dubai", to: "Istanbul", date: "2026-05-03", airline: "AirBlue", price: "$300" },
       { from: "Abu Dhabi", to: "London", date: "2026-05-01", airline: "Global Wings", price: "$520" },
-      { from: "Riyadh", to: "Paris", date: "2026-05-04", airline: "Travel Air", price: "$470" }
+      { from: "Riyadh", to: "Paris", date: "2026-05-04", airline: "Travel Air", price: "$470" },
+      { from: "Riyadh", to: "Istanbul", date: "2026-05-05", airline: "Arabian Air", price: "$340" }
     ];
 
     function searchFlights() {
@@ -266,7 +274,7 @@
       results.innerHTML = matched.map(f => `
         <div class="flight">
           <strong>${f.airline}</strong><br>
-          ${f.from} → ${f.to}<br>
+          ${f.from} to ${f.to}<br>
           Date: ${f.date}<br>
           Price: ${f.price}
         </div>
@@ -282,52 +290,100 @@
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function getBotReply(message) {
-      const msg = message.toLowerCase();
+    function normalizeMessage(message) {
+      return message.toLowerCase().replace(/[^\w\s]/g, "").trim();
+    }
 
-      if (msg.includes("hello") || msg.includes("hi") || msg.includes("hey")) {
-        return "Hello! I can help you find flights and explain baggage rules.";
+    function containsAny(message, keywords) {
+      return keywords.some(word => message.includes(word));
+    }
+
+    function findFlightsFromText(message) {
+      const cities = ["Dubai", "Abu Dhabi", "Riyadh", "London", "Paris", "Istanbul"];
+      const foundCities = cities.filter(city => message.includes(city.toLowerCase()));
+
+      if (foundCities.length >= 2) {
+        const fromCity = foundCities[0];
+        const toCity = foundCities[1];
+        return flights.filter(f => f.from === fromCity && f.to === toCity);
       }
 
-      if (msg.includes("flight") || msg.includes("book") || msg.includes("ticket")) {
-        return "Use the flight search section above to check simulated available flights.";
+      return [];
+    }
+
+    function getSmartReply(rawMessage) {
+      const msg = normalizeMessage(rawMessage);
+
+      if (containsAny(msg, ["hello", "hi", "hey", "good morning", "good evening"])) {
+        return "Hello! I can help you search flights, explain baggage rules, and answer travel questions.";
       }
 
-      if (msg.includes("baggage") || msg.includes("bag") || msg.includes("luggage")) {
-        return "You can carry 7kg cabin baggage and 20kg check-in baggage.";
+      if (containsAny(msg, ["who are you", "what can you do"])) {
+        return "I am your AI Airline Booking Assistant. I can help with flight search, baggage rules, and simple travel support.";
       }
 
-      if (msg.includes("overweight")) {
-        return "If your baggage is overweight, extra charges may apply depending on the airline.";
+      if (containsAny(msg, ["baggage", "bag", "luggage", "allowance"])) {
+        return "The baggage allowance is 7kg for cabin baggage and 20kg for check-in baggage.";
       }
 
-      if (msg.includes("laptop")) {
-        return "Yes, you can usually bring a laptop in your cabin bag.";
+      if (containsAny(msg, ["overweight", "extra baggage", "heavy bag"])) {
+        return "If your baggage is overweight, extra charges may apply depending on the airline policy.";
       }
 
-      if (msg.includes("date")) {
-        return "Please choose your travel date in the flight search section.";
+      if (containsAny(msg, ["laptop", "computer"])) {
+        return "Yes, you can usually carry a laptop in your cabin bag.";
       }
 
-      if (msg.includes("thanks") || msg.includes("thank you")) {
-        return "You're welcome! Have a great trip.";
+      if (containsAny(msg, ["passport"])) {
+        return "For international travel, passengers usually need a valid passport and sometimes a visa depending on the destination.";
       }
 
-      return "Sorry, I do not understand. Try asking about flights, baggage, or booking.";
+      if (containsAny(msg, ["visa"])) {
+        return "Visa requirements depend on the destination country. Please check official travel rules before booking.";
+      }
+
+      if (containsAny(msg, ["book", "flight", "ticket", "travel"])) {
+        const matchedFlights = findFlightsFromText(msg);
+
+        if (matchedFlights.length > 0) {
+          let reply = "I found these simulated flights:\n";
+          matchedFlights.forEach(f => {
+            reply += `${f.from} to ${f.to} on ${f.date} with ${f.airline} for ${f.price}. `;
+          });
+          return reply;
+        }
+
+        return "You can use the flight search section above. Enter departure city, destination, and date to view available simulated flights.";
+      }
+
+      if (containsAny(msg, ["cheap", "cheapest", "lowest price"])) {
+        const cheapest = [...flights].sort((a, b) => parseInt(a.price.slice(1)) - parseInt(b.price.slice(1)))[0];
+        return `The cheapest simulated flight available is ${cheapest.from} to ${cheapest.to} on ${cheapest.date} with ${cheapest.airline} for ${cheapest.price}.`;
+      }
+
+      if (containsAny(msg, ["thank you", "thanks"])) {
+        return "You're welcome. I am happy to help with your travel questions.";
+      }
+
+      if (containsAny(msg, ["bye", "goodbye"])) {
+        return "Goodbye! Have a safe and pleasant trip.";
+      }
+
+      return "Sorry, I did not fully understand your question. Try asking about flights, baggage, passport, visa, or booking.";
     }
 
     function sendMessage() {
       const input = document.getElementById("userInput");
       const userText = input.value.trim();
 
-      if (userText === "") return;
+      if (!userText) return;
 
       addMessage(userText, "user");
 
       setTimeout(() => {
-        const reply = getBotReply(userText);
+        const reply = getSmartReply(userText);
         addMessage(reply, "bot");
-      }, 500);
+      }, 600);
 
       input.value = "";
     }
