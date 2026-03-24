@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Airline Booking Assistant</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: white;
+    }
+
+    /* Splash Screen */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+
+    #logo {
+      font-size: 42px;
+      font-weight: bold;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: fadeZoom 2s ease forwards;
+      color: #ff2d55;
+      text-align: center;
+    }
+
+    #logo span {
+      color: white;
+      display: block;
+      font-size: 20px;
+      margin-top: 10px;
+    }
+
+    @keyframes fadeZoom {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Main App */
+    .app {
+      display: none;
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin-bottom: 8px;
+      color: #38bdf8;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    input, button, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    input, select {
+      background: #f8fafc;
+      color: #111827;
+    }
+
+    button {
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #0ea5e9;
+    }
+
+    .results, .chat-box {
+      margin-top: 15px;
+      padding: 15px;
+      background: #334155;
+      border-radius: 12px;
+    }
+
+    .flight {
+      background: #475569;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .chat-messages {
+      max-height: 260px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding-right: 4px;
+    }
+
+    .message {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin: 8px 0;
+      max-width: 80%;
+    }
+
+    .user {
+      background: #38bdf8;
+      color: #0f172a;
+      margin-left: auto;
+    }
+
+    .bot {
+      background: #475569;
+      color: white;
+    }
+
+    .small {
+      color: #cbd5e1;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      #logo {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div id="logo">
+      ✈️ AI Airline
+      <span>Booking Assistant</span>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app" id="app">
+    <div class="header">
+      <h1>AI Airline Booking Assistant</h1>
+      <p>Search flights and chat with your AI travel helper</p>
+    </div>
+
+    <div class="card">
+      <h2>Flight Search</h2>
+
+      <label for="from">Departure City</label>
+      <select id="from">
+        <option>Dubai</option>
+        <option>Abu Dhabi</option>
+        <option>Riyadh</option>
+      </select>
+
+      <label for="to">Destination</label>
+      <select id="to">
+        <option>London</option>
+        <option>Paris</option>
+        <option>Istanbul</option>
+      </select>
+
+      <label for="date">Travel Date</label>
+      <input type="date" id="date" />
+
+      <button onclick="searchFlights()">Search Flights</button>
+
+      <div class="results" id="results">
+        <strong>Available flights will appear here.</strong>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>AI Chatbot</h2>
+      <div class="chat-box">
+        <div class="chat-messages" id="chatMessages">
+          <div class="message bot">Hello! I can help you with flights, baggage rules, and travel questions.</div>
+        </div>
+        <input type="text" id="userInput" placeholder="Ask about flights, baggage, laptop, overweight..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <div class="small">
+      All data used in this application is simulated for educational purposes only.
+    </div>
+  </div>
+
+  <script>
+    // Splash screen
+    window.addEventListener("load", function () {
+      setTimeout(() => {
+        document.getElementById("splash").style.display = "none";
+        document.getElementById("app").style.display = "block";
+      }, 2600);
+    });
+
+    // Simulated flight data
+    const flights = [
+      { from: "Dubai", to: "London", date: "2026-05-01", airline: "SkyJet", price: "$500" },
+      { from: "Dubai", to: "Paris", date: "2026-05-02", airline: "FlyAir", price: "$450" },
+      { from: "Dubai", to: "Istanbul", date: "2026-05-03", airline: "AirBlue", price: "$300" },
+      { from: "Abu Dhabi", to: "London", date: "2026-05-01", airline: "Global Wings", price: "$520" },
+      { from: "Riyadh", to: "Paris", date: "2026-05-04", airline: "Travel Air", price: "$470" }
+    ];
+
+    function searchFlights() {
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+      const date = document.getElementById("date").value;
+      const results = document.getElementById("results");
+
+      const matched = flights.filter(f =>
+        f.from === from &&
+        f.to === to &&
+        (!date || f.date === date)
+      );
+
+      if (matched.length === 0) {
+        results.innerHTML = "<strong>No flights found.</strong><br>Try another city or date.";
+        return;
+      }
+
+      results.innerHTML = matched.map(f => `
+        <div class="flight">
+          <strong>${f.airline}</strong><br>
+          ${f.from} → ${f.to}<br>
+          Date: ${f.date}<br>
+          Price: ${f.price}
+        </div>
+      `).join("");
+    }
+
+    function addMessage(text, sender) {
+      const chatMessages = document.getElementById("chatMessages");
+      const msg = document.createElement("div");
+      msg.className = `message ${sender}`;
+      msg.textContent = text;
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function getBotReply(message) {
+      const msg = message.toLowerCase();
+
+      if (msg.includes("hello") || msg.includes("hi") || msg.includes("hey")) {
+        return "Hello! I can help you find flights and explain baggage rules.";
+      }
+
+      if (msg.includes("flight") || msg.includes("book") || msg.includes("ticket")) {
+        return "Use the flight search section above to check simulated available flights.";
+      }
+
+      if (msg.includes("baggage") || msg.includes("bag") || msg.includes("luggage")) {
+        return "You can carry 7kg cabin baggage and 20kg check-in baggage.";
+      }
+
+      if (msg.includes("overweight")) {
+        return "If your baggage is overweight, extra charges may apply depending on the airline.";
+      }
+
+      if (msg.includes("laptop")) {
+        return "Yes, you can usually bring a laptop in your cabin bag.";
+      }
+
+      if (msg.includes("date")) {
+        return "Please choose your travel date in the flight search section.";
+      }
+
+      if (msg.includes("thanks") || msg.includes("thank you")) {
+        return "You're welcome! Have a great trip.";
+      }
+
+      return "Sorry, I do not understand. Try asking about flights, baggage, or booking.";
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const userText = input.value.trim();
+
+      if (userText === "") return;
+
+      addMessage(userText, "user");
+
+      setTimeout(() => {
+        const reply = getBotReply(userText);
+        addMessage(reply, "bot");
+      }, 500);
+
+      input.value = "";
+    }
+
+    document.getElementById("userInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
